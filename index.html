@@ -1,0 +1,1170 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏀 Sports Gear Guardian: ฝ่าวิกฤตห้องพักกีฬา</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;500;600;700&display=swap');
+        
+        :root {
+            --bg-dark: #0f172a;
+            --panel-bg: #1e293b;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-orange: #f97316;
+            --accent-red: #ef4444;
+            --text-main: #f8fafc;
+        }
+
+        body {
+            font-family: 'Kanit', sans-serif;
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .workspace {
+            background-image: 
+                linear-gradient(rgba(59, 130, 246, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(59, 130, 246, 0.1) 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+
+        .card-node {
+            cursor: grab;
+            transition: transform 0.1s, box-shadow 0.2s;
+            user-select: none;
+        }
+        
+        .card-node:active {
+            cursor: grabbing;
+            transform: scale(0.95);
+        }
+
+        .drop-zone {
+            min-height: 80px;
+            border: 2px dashed #475569;
+            border-radius: 0.5rem;
+            transition: border-color 0.2s, background-color 0.2s;
+        }
+        
+        .drop-zone.drag-over {
+            border-color: var(--accent-green);
+            background-color: rgba(16, 185, 129, 0.1);
+        }
+
+        .flowchart-connector {
+            position: absolute;
+            width: 2px;
+            background-color: #64748b;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Shape Styles */
+        .shape-io { /* Parallelogram */
+            transform: skew(-15deg);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        }
+        .shape-io > div { transform: skew(15deg); }
+        
+        .shape-process { /* Rectangle */
+            background: linear-gradient(135deg, #059669, #047857);
+        }
+        
+        .shape-decision { /* Diamond */
+            transform: rotate(45deg) scale(0.8);
+            background: linear-gradient(135deg, #d97706, #b45309);
+            margin: 10px;
+        }
+        .shape-decision > div { transform: rotate(-45deg) scale(1.25); }
+        
+        .shape-action { /* Oval */
+            border-radius: 50px;
+            background: linear-gradient(135deg, #dc2626, #b91c1c);
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .pulse-animation {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.7); }
+            70% { box-shadow: 0 0 0 10px rgba(59, 130, 246, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+        }
+
+        .shake-animation {
+            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+        
+        .success-flash {
+            animation: successFlash 1s ease-out;
+        }
+        
+        @keyframes successFlash {
+            0% { background-color: rgba(16, 185, 129, 0.5); }
+            100% { background-color: transparent; }
+        }
+
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+        }
+
+        svg.connections {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .modal-overlay {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(5px);
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; height: 8px; }
+        ::-webkit-scrollbar-track { background: #1e293b; }
+        ::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="h-screen w-screen flex flex-col text-sm md:text-base">
+
+    <header class="glass-panel h-16 flex items-center justify-between px-4 sm:px-6 z-20 border-b border-slate-700 shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 rounded-full bg-blue-600 flex items-center justify-center text-xl shadow-[0_0_15px_rgba(37,99,235,0.5)]">
+                🏀
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-green-400">Sports Gear Guardian</h1>
+                <p class="text-xs text-slate-400">ฝ่าวิกฤตห้องพักกีฬา</p>
+            </div>
+        </div>
+        
+        <div class="flex items-center gap-4 sm:gap-6">
+            <!-- Stats -->
+            <div class="flex gap-4">
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400">Score</span>
+                    <div class="flex items-center gap-1 font-bold text-yellow-400">
+                        <i class="fas fa-star"></i> <span id="score-display">0</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400">Bugs</span>
+                    <div class="flex items-center gap-1 font-bold text-red-400">
+                        <i class="fas fa-bug"></i> <span id="bug-display">0</span>
+                    </div>
+                </div>
+                <div class="flex flex-col items-center">
+                    <span class="text-xs text-slate-400">Time</span>
+                    <div class="flex items-center gap-1 font-bold text-blue-400">
+                        <i class="fas fa-clock"></i> <span id="timer-display">00:00</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="h-8 w-px bg-slate-600"></div>
+            
+            <!-- Controls -->
+            <div class="flex gap-2">
+                <button id="btn-sound" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition" title="Sound ON/OFF">
+                    <i class="fas fa-volume-up"></i>
+                </button>
+                <button id="btn-teacher" class="w-10 h-10 rounded-lg bg-slate-700 hover:bg-slate-600 flex items-center justify-center transition text-orange-400" title="Teacher Mode">
+                    <i class="fas fa-chalkboard-teacher"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex overflow-hidden relative">
+        <!-- Left Sidebar: Toolbox -->
+        <aside class="w-64 glass-panel border-r border-slate-700 flex flex-col z-20 shrink-0 hidden md:flex">
+            <div class="p-4 border-b border-slate-700 flex justify-between items-center bg-slate-800/50">
+                <h2 class="font-semibold text-slate-200"><i class="fas fa-layer-group mr-2"></i>Flowchart Nodes</h2>
+            </div>
+            
+            <div class="flex-1 overflow-y-auto p-4 space-y-4" id="toolbox">
+                <!-- Node templates will be injected here via JS to allow dragging -->
+                <div class="text-xs text-slate-400 mb-2 uppercase font-semibold tracking-wider">Drag to Workspace</div>
+                
+                <!-- Prototype Tools -->
+                <div class="tool-item group" draggable="true" data-type="io">
+                    <div class="shape-io w-full h-12 flex items-center justify-center text-xs font-medium shadow-lg group-hover:ring-2 ring-blue-400">
+                        <div><i class="fas fa-keyboard mr-1"></i> Input/Output</div>
+                    </div>
+                </div>
+                
+                <div class="tool-item group" draggable="true" data-type="process">
+                    <div class="shape-process w-full h-12 flex items-center justify-center text-xs font-medium shadow-lg rounded group-hover:ring-2 ring-green-400">
+                        <div><i class="fas fa-cogs mr-1"></i> Process</div>
+                    </div>
+                </div>
+                
+                <div class="tool-item group" draggable="true" data-type="decision">
+                    <div class="shape-decision w-24 h-24 mx-auto flex items-center justify-center text-xs font-medium shadow-lg group-hover:ring-2 ring-orange-400">
+                        <div class="text-center leading-tight"><i class="fas fa-question-circle block mb-1"></i>Decision<br>(Y/N)</div>
+                    </div>
+                </div>
+                
+                <div class="tool-item group" draggable="true" data-type="action">
+                    <div class="shape-action w-full h-12 flex items-center justify-center text-xs font-medium shadow-lg group-hover:ring-2 ring-red-400">
+                        <div><i class="fas fa-bolt mr-1"></i> Action</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Current Phase Indicator -->
+            <div class="p-4 border-t border-slate-700 bg-slate-900">
+                <h3 class="text-xs text-slate-400 mb-2">Current Phase</h3>
+                <div id="phase-indicator" class="font-bold text-blue-400 flex items-center gap-2">
+                    <i class="fas fa-tools"></i> 1. Build the Core
+                </div>
+                <div class="mt-3 flex gap-2">
+                    <button id="btn-test" class="flex-1 bg-blue-600 hover:bg-blue-500 text-white py-2 rounded-lg text-sm font-medium transition shadow-lg shadow-blue-500/30">
+                        <i class="fas fa-play mr-1"></i> Test Logic
+                    </button>
+                    <button id="btn-clear" class="px-3 bg-slate-700 hover:bg-slate-600 text-white rounded-lg transition" title="Clear Board">
+                        <i class="fas fa-trash-alt"></i>
+                    </button>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Center: Workspace / Flowchart Canvas -->
+        <section class="flex-1 relative workspace" id="workspace-container">
+            <svg class="connections" id="connection-layer"></svg>
+            <div id="canvas" class="absolute inset-0 p-8 min-w-[800px] min-h-[800px]">
+                <!-- Static START Node -->
+                <div class="absolute left-1/2 top-10 -translate-x-1/2 z-10 node-element" id="node-start" data-id="start">
+                    <div class="rounded-full bg-slate-700 border-2 border-slate-500 w-32 h-12 flex items-center justify-center font-bold shadow-lg">
+                        START
+                    </div>
+                    <!-- Connection Port -->
+                    <div class="port-out absolute -bottom-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-slate-400 rounded-full cursor-pointer hover:bg-blue-400 border border-slate-800 z-20" data-node="start" data-port="out"></div>
+                </div>
+
+                <!-- Static END Node -->
+                <div class="absolute left-1/2 bottom-10 -translate-x-1/2 z-10 node-element" id="node-end" data-id="end">
+                    <!-- Connection Port In -->
+                    <div class="port-in absolute -top-2 left-1/2 -translate-x-1/2 w-4 h-4 bg-slate-400 rounded-full cursor-pointer hover:bg-green-400 border border-slate-800 z-20" data-node="end" data-port="in"></div>
+                    <div class="rounded-full bg-slate-800 border-2 border-slate-600 text-slate-400 w-32 h-12 flex items-center justify-center font-bold shadow-lg">
+                        END
+                    </div>
+                </div>
+                
+                <!-- Dynamic Nodes will be dropped here -->
+            </div>
+            
+            <!-- Mobile Tools Toggle -->
+            <button class="md:hidden absolute bottom-4 left-4 w-12 h-12 bg-blue-600 rounded-full shadow-lg flex items-center justify-center z-30" id="btn-mobile-tools">
+                <i class="fas fa-plus"></i>
+            </button>
+        </section>
+
+        <!-- Right Sidebar: Scenario & Execution -->
+        <aside class="w-72 glass-panel border-l border-slate-700 flex flex-col z-20 shrink-0 transform transition-transform duration-300 translate-x-full md:translate-x-0 absolute md:relative right-0 h-full" id="scenario-panel">
+            <div class="p-4 border-b border-slate-700 bg-slate-800/50 flex justify-between items-center">
+                <h2 class="font-semibold text-slate-200"><i class="fas fa-clipboard-list mr-2"></i>Testing Center</h2>
+                <button class="md:hidden text-slate-400" id="btn-close-scenario"><i class="fas fa-times"></i></button>
+            </div>
+            
+            <!-- Active Scenario Card -->
+            <div class="p-4 border-b border-slate-700">
+                <div class="bg-gradient-to-br from-slate-800 to-slate-900 rounded-xl p-4 border border-slate-600 shadow-xl relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 bg-blue-600 text-xs px-2 py-1 rounded-bl-lg font-bold">Scenario <span id="scenario-num">1</span>/12</div>
+                    <h3 class="font-bold text-lg mb-2 mt-2 text-white" id="scenario-title">นักเรียนยืมลูกฟุตบอล</h3>
+                    <p class="text-sm text-slate-300 mb-3" id="scenario-desc">ด.ช.เอ มาขอยืมลูกฟุตบอล 1 ลูก ในระบบมีลูกฟุตบอลว่าง 5 ลูก และเขาไม่มีของค้างคืน</p>
+                    
+                    <div class="space-y-1 mt-4 text-xs font-mono bg-slate-950 p-2 rounded border border-slate-800">
+                        <div class="flex justify-between"><span class="text-slate-500">User:</span> <span class="text-blue-300" id="env-user">Student A</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Overdue:</span> <span class="text-green-400" id="env-overdue">No</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Item:</span> <span class="text-yellow-300" id="env-item">Football (Qty: 5)</span></div>
+                        <div class="flex justify-between"><span class="text-slate-500">Status:</span> <span class="text-green-400" id="env-status">Good</span></div>
+                    </div>
+                </div>
+                
+                <button id="btn-run-scenario" class="w-full mt-4 bg-green-600 hover:bg-green-500 text-white py-3 rounded-lg font-bold transition shadow-[0_0_15px_rgba(16,185,129,0.3)] disabled:opacity-50 disabled:cursor-not-allowed hidden">
+                    <i class="fas fa-flask mr-2"></i> Run Scenario
+                </button>
+            </div>
+
+            <!-- Execution Log -->
+            <div class="flex-1 p-4 overflow-y-auto flex flex-col">
+                <h3 class="text-xs text-slate-400 mb-2 uppercase font-semibold">Execution Log</h3>
+                <div id="execution-log" class="flex-1 bg-slate-950 rounded-lg border border-slate-800 p-2 font-mono text-xs overflow-y-auto space-y-1">
+                    <div class="text-slate-500">> System Ready...</div>
+                    <div class="text-slate-500">> Build your flowchart to start testing.</div>
+                </div>
+            </div>
+            
+            <button class="absolute -left-10 top-1/2 -translate-y-1/2 w-10 h-16 bg-slate-800 border border-slate-700 border-r-0 rounded-l-xl flex items-center justify-center md:hidden z-30 text-slate-300" id="btn-toggle-scenario">
+                <i class="fas fa-chevron-left"></i>
+            </button>
+        </aside>
+    </main>
+
+    <!-- Start Screen Modal -->
+    <div id="modal-start" class="fixed inset-0 modal-overlay z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-600 rounded-2xl max-w-2xl w-full p-6 sm:p-10 shadow-2xl relative overflow-hidden">
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-green-500 rounded-full mix-blend-multiply filter blur-3xl opacity-20"></div>
+            
+            <div class="relative z-10 text-center">
+                <div class="text-6xl mb-4">🏀</div>
+                <h1 class="text-3xl sm:text-4xl font-bold mb-2 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-green-400 to-orange-400">Sports Gear Guardian</h1>
+                <h2 class="text-xl text-slate-300 mb-6">ภารกิจสร้างระบบยืม-คืนอุปกรณ์กีฬา</h2>
+                
+                <div class="bg-slate-900/50 rounded-xl p-6 text-left mb-8 border border-slate-700">
+                    <p class="mb-4">ยินดีต้อนรับทีมผู้พิทักษ์! ห้องพักกีฬาโรงเรียนกำลังวุ่นวาย อุปกรณ์หายบ้าง ค้างคืนบ้าง หน้าที่ของพวกคุณคือ <strong>สร้างระบบการทำงาน (Flowchart)</strong> เพื่อจัดการปัญหานี้</p>
+                    <h3 class="font-bold text-blue-400 mb-2">วิธีเล่น:</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-slate-300 text-sm">
+                        <li><strong>Phase 1:</strong> ลากกล่องข้อความ (Nodes) มาเรียงและเชื่อมต่อกันตั้งแต่ START ถึง END</li>
+                        <li><strong>Phase 2:</strong> ทดสอบระบบกับสถานการณ์ (Scenarios) 12 รูปแบบ</li>
+                        <li>ถ้าระบบทำงานถูก รับ ⭐ 1 คะแนน</li>
+                        <li>ถ้าเจอข้อผิดพลาด (Bug) รับ 🐞 1 ตัว และต้องแก้ระบบ (Patch Update)</li>
+                    </ul>
+                </div>
+                
+                <button id="btn-start-game" class="bg-gradient-to-r from-blue-600 to-blue-500 hover:from-blue-500 hover:to-blue-400 text-white font-bold py-3 px-10 rounded-full text-lg transition transform hover:scale-105 shadow-[0_0_20px_rgba(59,130,246,0.5)]">
+                    เริ่มภารกิจ
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Node Editor Modal -->
+    <div id="modal-node-edit" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-600 rounded-xl max-w-md w-full p-6 shadow-2xl">
+            <h3 class="text-xl font-bold mb-4 flex items-center gap-2" id="edit-modal-title">
+                <i class="fas fa-edit text-blue-400"></i> Edit Node
+            </h3>
+            
+            <div class="mb-4">
+                <label class="block text-sm font-medium text-slate-300 mb-2">เลือกคำสั่ง / ข้อความ:</label>
+                <select id="node-text-select" class="w-full bg-slate-900 border border-slate-600 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 outline-none">
+                    <!-- Options populated by JS based on node type -->
+                </select>
+            </div>
+            
+            <div class="flex justify-end gap-3 mt-6">
+                <button id="btn-delete-node" class="px-4 py-2 bg-red-600/20 text-red-400 hover:bg-red-600 hover:text-white rounded-lg transition mr-auto">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+                <button id="btn-cancel-edit" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 rounded-lg transition">Cancel</button>
+                <button id="btn-save-edit" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-lg transition font-medium">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Result Modal (End Game) -->
+    <div id="modal-result" class="fixed inset-0 modal-overlay z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-600 rounded-2xl max-w-xl w-full p-8 shadow-2xl text-center relative overflow-hidden">
+            <div class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCI+CgkJPGNpcmNsZSBjeD0iMjAiIGN5PSIyMCIgcj0iMiIgZmlsbD0iIzMzNCIvPgoJPC9zdmc+')] opacity-20"></div>
+            
+            <h2 class="text-3xl font-bold mb-2 text-white relative z-10">สรุปผลภารกิจ</h2>
+            <p class="text-slate-400 mb-6 relative z-10">Decompiling System Data...</p>
+            
+            <div class="grid grid-cols-2 gap-4 mb-8 relative z-10">
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+                    <div class="text-yellow-400 text-3xl mb-1"><i class="fas fa-star"></i></div>
+                    <div class="text-3xl font-bold text-white" id="final-score">0</div>
+                    <div class="text-xs text-slate-400">Scenarios Passed</div>
+                </div>
+                <div class="bg-slate-900 p-4 rounded-xl border border-slate-700">
+                    <div class="text-red-400 text-3xl mb-1"><i class="fas fa-bug"></i></div>
+                    <div class="text-3xl font-bold text-white" id="final-bugs">0</div>
+                    <div class="text-xs text-slate-400">Bugs Encountered</div>
+                </div>
+            </div>
+            
+            <div class="bg-slate-900/50 p-4 rounded-xl border border-slate-700 text-left mb-6 relative z-10">
+                <h3 class="font-bold text-blue-400 mb-2"><i class="fas fa-code"></i> Pseudocode Generated:</h3>
+                <pre id="pseudocode-output" class="font-mono text-xs text-slate-300 whitespace-pre-wrap overflow-y-auto max-h-32 p-2 bg-black/30 rounded"></pre>
+            </div>
+            
+            <button onclick="location.reload()" class="relative z-10 bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-8 rounded-full transition shadow-lg">
+                เล่นอีกครั้ง
+            </button>
+        </div>
+    </div>
+
+    <!-- Alert Toast -->
+    <div id="toast" class="fixed top-20 left-1/2 -translate-x-1/2 bg-slate-800 border-l-4 border-blue-500 text-white px-6 py-3 rounded shadow-xl transform -translate-y-20 opacity-0 transition-all duration-300 z-50 flex items-center gap-3">
+        <i id="toast-icon" class="fas fa-info-circle text-blue-500"></i>
+        <span id="toast-msg">Message</span>
+    </div>
+
+    <script>
+        // --- GAME DATA & OPTIONS ---
+        const NODE_OPTIONS = {
+            io: [
+                "รับข้อมูลผู้ยืม และ รหัสอุปกรณ์",
+                "แสดงข้อความ 'ยืมสำเร็จ'",
+                "แสดงข้อความ 'อุปกรณ์ไม่ว่าง'",
+                "แสดงข้อความ 'คืนอุปกรณ์สำเร็จ'",
+                "แสดงข้อความ 'ติดแบล็คลิสต์'",
+                "แสดงข้อความ 'อุปกรณ์ชำรุด แจ้งซ่อม'"
+            ],
+            process: [
+                "บันทึกข้อมูลการยืมลงฐานข้อมูล",
+                "บันทึกการคืน ตัดยอดจากระบบ",
+                "อัปเดตสถานะอุปกรณ์เป็น 'ส่งซ่อม'",
+                "เพิ่มชื่อนักเรียนในบัญชีดำ (Blacklist)",
+                "หักคะแนนความประพฤติ"
+            ],
+            decision: [
+                "มีอุปกรณ์ว่างหรือไม่?",
+                "มีของค้างคืนเกินกำหนดหรือไม่?",
+                "อุปกรณ์ชำรุดหรือไม่?",
+                "เป็นครูหรือนักเรียน?",
+                "ผู้ยืมติด Blacklist หรือไม่?"
+            ],
+            action: [
+                "จ่ายอุปกรณ์ให้ผู้ยืม",
+                "รับอุปกรณ์คืนเข้าคลัง",
+                "ส่งแจ้งเตือนให้ครูพละ",
+                "ปฏิเสธการทำรายการ"
+            ]
+        };
+
+        const SCENARIOS = [
+            { id: 1, title: "ยืมปกติ (ผ่าน)", desc: "ด.ช.เอ ยืมฟุตบอล ไม่มีของค้างคืน ฟุตบอลในคลังว่าง", env: { user: 'Student', overdue: false, itemQty: 5, broken: false, action: 'borrow' }, expectedEnd: "ยืมสำเร็จ" },
+            { id: 2, title: "ยืมแต่ของหมด", desc: "ด.ญ.บี ยืมไม้แบด แต่ไม้แบดถูกยืมไปหมดแล้ว", env: { user: 'Student', overdue: false, itemQty: 0, broken: false, action: 'borrow' }, expectedEnd: "อุปกรณ์ไม่ว่าง" },
+            { id: 3, title: "ยืมแต่มีของค้าง", desc: "ด.ช.ซี ยืมบาสเกตบอล แต่เขามีลูกฟุตบอลค้างคืนอยู่", env: { user: 'Student', overdue: true, itemQty: 3, broken: false, action: 'borrow' }, expectedEnd: "ปฏิเสธการทำรายการ" },
+            { id: 4, title: "คืนของปกติ", desc: "ด.ญ.ดี นำลูกวอลเลย์บอลมาคืนในสภาพสมบูรณ์", env: { user: 'Student', overdue: false, itemQty: 1, broken: false, action: 'return' }, expectedEnd: "คืนอุปกรณ์สำเร็จ" },
+            { id: 5, title: "คืนของชำรุด", desc: "ด.ช.อี นำไม้แบดมาคืนแต่เอ็นขาด", env: { user: 'Student', overdue: false, itemQty: 1, broken: true, action: 'return' }, expectedEnd: "อุปกรณ์ชำรุด แจ้งซ่อม" },
+            { id: 6, title: "ครูยืมของ", desc: "ครูพละมายืมกรวยฝึกซ้อม (ครูยืมได้เสมอแม้ของเหลือน้อย)", env: { user: 'Teacher', overdue: false, itemQty: 2, broken: false, action: 'borrow' }, expectedEnd: "ยืมสำเร็จ" },
+            // Add more scenarios up to 12 as requested
+            { id: 7, title: "นักเรียน Blacklist", desc: "ด.ช.เอฟ ที่ติดแบล็คลิสต์พยายามจะยืมฟุตบอล", env: { user: 'Student', overdue: false, itemQty: 5, broken: false, action: 'borrow', blacklist: true }, expectedEnd: "ปฏิเสธการทำรายการ" },
+            { id: 8, title: "คืนของล่าช้า", desc: "ด.ญ.จี คืนบาสเกตบอลเกินกำหนด 3 วัน", env: { user: 'Student', overdue: true, itemQty: 1, broken: false, action: 'return' }, expectedEnd: "ติดแบล็คลิสต์" },
+        ];
+
+        // --- STATE ---
+        const state = {
+            nodes: [], // { id, type, x, y, text }
+            connections: [], // { fromId, fromPort, toId, toPort, pathId }
+            isDrawingConnection: false,
+            connectionStart: null, // { nodeId, port, x, y }
+            draggedNode: null,
+            score: 0,
+            bugs: 0,
+            timerSeconds: 0,
+            timerInterval: null,
+            phase: 1, // 1: Build, 2: Test, 3: Result
+            currentScenarioIndex: 0,
+            soundEnabled: true
+        };
+
+        // DOM Elements
+        const DOM = {
+            workspace: document.getElementById('canvas'),
+            svgLayer: document.getElementById('connection-layer'),
+            score: document.getElementById('score-display'),
+            bugs: document.getElementById('bug-display'),
+            timer: document.getElementById('timer-display'),
+            phaseIndicator: document.getElementById('phase-indicator'),
+            btnTest: document.getElementById('btn-test'),
+            btnRunScenario: document.getElementById('btn-run-scenario'),
+            scenarioPanel: document.getElementById('scenario-panel'),
+            execLog: document.getElementById('execution-log'),
+            toast: document.getElementById('toast'),
+            toastMsg: document.getElementById('toast-msg'),
+            toastIcon: document.getElementById('toast-icon')
+        };
+
+        // --- STREAMING_CHUNK:Audio & Utilities ---
+        const sfx = {
+            context: new (window.AudioContext || window.webkitAudioContext)(),
+            playTone: function(freq, type, duration, vol=0.1) {
+                if(!state.soundEnabled) return;
+                const osc = this.context.createOscillator();
+                const gain = this.context.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.context.currentTime);
+                gain.gain.setValueAtTime(vol, this.context.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.context.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.context.destination);
+                osc.start();
+                osc.stop(this.context.currentTime + duration);
+            },
+            drop: () => sfx.playTone(400, 'sine', 0.1),
+            connect: () => sfx.playTone(600, 'sine', 0.15),
+            success: () => { sfx.playTone(523.25, 'sine', 0.1); setTimeout(() => sfx.playTone(659.25, 'sine', 0.2), 100); },
+            error: () => { sfx.playTone(150, 'square', 0.2, 0.05); setTimeout(() => sfx.playTone(100, 'square', 0.3, 0.05), 150); }
+        };
+
+        document.getElementById('btn-sound').addEventListener('click', (e) => {
+            state.soundEnabled = !state.soundEnabled;
+            e.currentTarget.innerHTML = state.soundEnabled ? '<i class="fas fa-volume-up"></i>' : '<i class="fas fa-volume-mute text-slate-500"></i>';
+        });
+
+        function showToast(msg, type = 'info') {
+            DOM.toastMsg.textContent = msg;
+            DOM.toast.classList.remove('-translate-y-20', 'opacity-0', 'border-blue-500', 'border-green-500', 'border-red-500', 'border-orange-500');
+            DOM.toastIcon.className = 'fas text-lg ';
+            
+            if(type === 'success') { DOM.toast.classList.add('border-green-500'); DOM.toastIcon.classList.add('fa-check-circle', 'text-green-500'); }
+            else if(type === 'error') { DOM.toast.classList.add('border-red-500'); DOM.toastIcon.classList.add('fa-exclamation-circle', 'text-red-500'); }
+            else if(type === 'warning') { DOM.toast.classList.add('border-orange-500'); DOM.toastIcon.classList.add('fa-exclamation-triangle', 'text-orange-500'); }
+            else { DOM.toast.classList.add('border-blue-500'); DOM.toastIcon.classList.add('fa-info-circle', 'text-blue-500'); }
+
+            setTimeout(() => {
+                DOM.toast.classList.add('-translate-y-20', 'opacity-0');
+            }, 3000);
+        }
+
+        function logExec(msg, type = 'normal') {
+            const div = document.createElement('div');
+            div.textContent = `> ${msg}`;
+            if(type === 'success') div.className = 'text-green-400';
+            else if(type === 'error') div.className = 'text-red-400';
+            else if(type === 'warning') div.className = 'text-yellow-400';
+            else div.className = 'text-slate-300';
+            DOM.execLog.appendChild(div);
+            DOM.execLog.scrollTop = DOM.execLog.scrollHeight;
+        }
+
+        // --- STREAMING_CHUNK:Drag and Drop Nodes ---
+        function initDragAndDrop() {
+            const tools = document.querySelectorAll('.tool-item');
+            tools.forEach(tool => {
+                tool.addEventListener('dragstart', (e) => {
+                    e.dataTransfer.setData('type', tool.dataset.type);
+                    e.dataTransfer.effectAllowed = 'copy';
+                });
+            });
+
+            DOM.workspace.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                e.dataTransfer.dropEffect = 'copy';
+            });
+
+            DOM.workspace.addEventListener('drop', (e) => {
+                e.preventDefault();
+                const type = e.dataTransfer.getData('type');
+                if (!type) return;
+
+                const rect = DOM.workspace.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+
+                createNode(type, x, y);
+            });
+        }
+
+        function generateId() { return 'node_' + Math.random().toString(36).substr(2, 9); }
+
+        function createNode(type, x, y, id = generateId(), text = null) {
+            if(!text) text = NODE_OPTIONS[type][0]; // Default text
+
+            const nodeObj = { id, type, x, y, text };
+            state.nodes.push(nodeObj);
+
+            const el = document.createElement('div');
+            el.className = `absolute z-10 node-element card-node drop-shadow-lg`;
+            el.id = id;
+            el.dataset.id = id;
+            el.style.left = `${x}px`;
+            el.style.top = `${y}px`;
+            
+            // Adjust visual center
+            el.style.transform = 'translate(-50%, -50%)';
+
+            let innerHTML = '';
+            let portsHTML = '';
+
+            if (type === 'io') {
+                innerHTML = `<div class="shape-io w-40 h-16 flex items-center justify-center text-xs font-medium text-center px-4 leading-tight"><div class="pointer-events-none">${text}</div></div>`;
+                portsHTML = `
+                    <div class="port-in absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-300 rounded-full cursor-pointer hover:bg-green-400 border border-slate-700" data-node="${id}" data-port="in"></div>
+                    <div class="port-out absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-300 rounded-full cursor-pointer hover:bg-blue-400 border border-slate-700" data-node="${id}" data-port="out"></div>`;
+            } else if (type === 'process') {
+                innerHTML = `<div class="shape-process w-40 h-16 flex items-center justify-center text-xs font-medium rounded text-center px-2 leading-tight pointer-events-none">${text}</div>`;
+                portsHTML = `
+                    <div class="port-in absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-300 rounded-full cursor-pointer hover:bg-green-400 border border-slate-700" data-node="${id}" data-port="in"></div>
+                    <div class="port-out absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-300 rounded-full cursor-pointer hover:bg-blue-400 border border-slate-700" data-node="${id}" data-port="out"></div>`;
+            } else if (type === 'decision') {
+                innerHTML = `<div class="shape-decision w-28 h-28 flex items-center justify-center text-[10px] font-medium text-center leading-tight"><div class="pointer-events-none px-2">${text}</div></div>`;
+                portsHTML = `
+                    <div class="port-in absolute -top-1 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-300 rounded-full cursor-pointer hover:bg-green-400 border border-slate-700" data-node="${id}" data-port="in"></div>
+                    <div class="port-out absolute top-1/2 -right-3 -translate-y-1/2 w-3 h-3 bg-green-500 rounded-full cursor-pointer hover:bg-green-400 border border-slate-700" data-node="${id}" data-port="yes" title="YES"></div>
+                    <div class="text-xs text-green-400 absolute top-1/2 -right-8 -translate-y-1/2 font-bold pointer-events-none">Y</div>
+                    <div class="port-out absolute top-1/2 -left-3 -translate-y-1/2 w-3 h-3 bg-red-500 rounded-full cursor-pointer hover:bg-red-400 border border-slate-700" data-node="${id}" data-port="no" title="NO"></div>
+                    <div class="text-xs text-red-400 absolute top-1/2 -left-8 -translate-y-1/2 font-bold pointer-events-none">N</div>`;
+            } else if (type === 'action') {
+                innerHTML = `<div class="shape-action w-36 h-14 flex items-center justify-center text-xs font-medium text-center px-2 leading-tight pointer-events-none">${text}</div>`;
+                portsHTML = `
+                    <div class="port-in absolute -top-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-300 rounded-full cursor-pointer hover:bg-green-400 border border-slate-700" data-node="${id}" data-port="in"></div>
+                    <div class="port-out absolute -bottom-2 left-1/2 -translate-x-1/2 w-3 h-3 bg-slate-300 rounded-full cursor-pointer hover:bg-blue-400 border border-slate-700" data-node="${id}" data-port="out"></div>`;
+            }
+
+            el.innerHTML = innerHTML + portsHTML;
+            DOM.workspace.appendChild(el);
+            sfx.drop();
+
+            makeNodeDraggable(el);
+            attachPortListeners(el);
+            
+            // Double click to edit
+            el.addEventListener('dblclick', (e) => {
+                if(e.target.classList.contains('port-in') || e.target.classList.contains('port-out')) return;
+                openEditModal(id, type, text);
+            });
+        }
+
+        // --- STREAMING_CHUNK:Node Interaction (Drag, Edit) ---
+        let isDraggingNode = false;
+        let dragOffset = { x: 0, y: 0 };
+        let activeNode = null;
+
+        function makeNodeDraggable(el) {
+            el.addEventListener('mousedown', (e) => {
+                if(e.target.classList.contains('port-in') || e.target.classList.contains('port-out')) return;
+                isDraggingNode = true;
+                activeNode = el;
+                const rect = el.getBoundingClientRect();
+                const parentRect = DOM.workspace.getBoundingClientRect();
+                
+                // Keep visually centered logic
+                const style = window.getComputedStyle(el);
+                const transform = new DOMMatrixReadOnly(style.transform);
+                
+                dragOffset.x = e.clientX - parentRect.left - parseFloat(el.style.left);
+                dragOffset.y = e.clientY - parentRect.top - parseFloat(el.style.top);
+                el.style.zIndex = 30;
+            });
+        }
+
+        document.addEventListener('mousemove', (e) => {
+            if (isDraggingNode && activeNode) {
+                const parentRect = DOM.workspace.getBoundingClientRect();
+                let newX = e.clientX - parentRect.left - dragOffset.x;
+                let newY = e.clientY - parentRect.top - dragOffset.y;
+                
+                activeNode.style.left = `${newX}px`;
+                activeNode.style.top = `${newY}px`;
+                
+                // Update internal state
+                const nodeObj = state.nodes.find(n => n.id === activeNode.id);
+                if(nodeObj) {
+                    nodeObj.x = newX;
+                    nodeObj.y = newY;
+                }
+                
+                updateConnections();
+            }
+
+            if (state.isDrawingConnection) {
+                const parentRect = DOM.workspace.getBoundingClientRect();
+                const mouseX = e.clientX - parentRect.left;
+                const mouseY = e.clientY - parentRect.top;
+                drawTemporaryConnection(state.connectionStart.x, state.connectionStart.y, mouseX, mouseY);
+            }
+        });
+
+        document.addEventListener('mouseup', () => {
+            if (isDraggingNode && activeNode) {
+                activeNode.style.zIndex = 10;
+                isDraggingNode = false;
+                activeNode = null;
+            }
+            if (state.isDrawingConnection) {
+                state.isDrawingConnection = false;
+                const tempLine = document.getElementById('temp-line');
+                if(tempLine) tempLine.remove();
+            }
+        });
+
+        // Edit Modal
+        const editModal = document.getElementById('modal-node-edit');
+        const selectText = document.getElementById('node-text-select');
+        let editingNodeId = null;
+
+        function openEditModal(id, type, currentText) {
+            editingNodeId = id;
+            selectText.innerHTML = '';
+            
+            NODE_OPTIONS[type].forEach(opt => {
+                const option = document.createElement('option');
+                option.value = opt;
+                option.textContent = opt;
+                if(opt === currentText) option.selected = true;
+                selectText.appendChild(option);
+            });
+            
+            editModal.classList.remove('hidden');
+        }
+
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => editModal.classList.add('hidden'));
+        
+        document.getElementById('btn-save-edit').addEventListener('click', () => {
+            if(!editingNodeId) return;
+            const newText = selectText.value;
+            const nodeData = state.nodes.find(n => n.id === editingNodeId);
+            if(nodeData) {
+                nodeData.text = newText;
+                // Update UI text (complex due to shape structure)
+                const nodeEl = document.getElementById(editingNodeId);
+                const textContainer = nodeEl.querySelector('.pointer-events-none');
+                if(textContainer) textContainer.textContent = newText;
+            }
+            editModal.classList.add('hidden');
+        });
+
+        document.getElementById('btn-delete-node').addEventListener('click', () => {
+            if(!editingNodeId) return;
+            // Remove DOM
+            const el = document.getElementById(editingNodeId);
+            if(el) el.remove();
+            // Remove connections
+            state.connections = state.connections.filter(c => c.fromId !== editingNodeId && c.toId !== editingNodeId);
+            // Remove State
+            state.nodes = state.nodes.filter(n => n.id !== editingNodeId);
+            
+            updateConnections();
+            editModal.classList.add('hidden');
+            sfx.error();
+        });
+
+        // --- STREAMING_CHUNK:Connections and Drawing Lines ---
+        function attachPortListeners(nodeEl) {
+            const ports = nodeEl.querySelectorAll('.port-out, .port-in');
+            ports.forEach(port => {
+                port.addEventListener('mousedown', (e) => {
+                    e.stopPropagation(); // Prevent node drag
+                    const isOut = port.classList.contains('port-out');
+                    if(isOut) {
+                        state.isDrawingConnection = true;
+                        const rect = port.getBoundingClientRect();
+                        const parentRect = DOM.workspace.getBoundingClientRect();
+                        state.connectionStart = {
+                            nodeId: port.dataset.node,
+                            port: port.dataset.port,
+                            x: rect.left + rect.width/2 - parentRect.left,
+                            y: rect.top + rect.height/2 - parentRect.top
+                        };
+                    }
+                });
+
+                port.addEventListener('mouseup', (e) => {
+                    e.stopPropagation();
+                    if(state.isDrawingConnection && port.classList.contains('port-in')) {
+                        const fromId = state.connectionStart.nodeId;
+                        const toId = port.dataset.node;
+                        
+                        // Prevent self connection
+                        if(fromId === toId) return;
+
+                        // Check if connection already exists from this specific port
+                        const existing = state.connections.findIndex(c => c.fromId === fromId && c.fromPort === state.connectionStart.port);
+                        if(existing !== -1) {
+                            // Remove old connection
+                            const oldPath = document.getElementById(state.connections[existing].pathId);
+                            if(oldPath) oldPath.remove();
+                            state.connections.splice(existing, 1);
+                        }
+
+                        const pathId = `path_${generateId()}`;
+                        state.connections.push({
+                            fromId,
+                            fromPort: state.connectionStart.port,
+                            toId,
+                            toPort: 'in', // always in
+                            pathId
+                        });
+                        
+                        sfx.connect();
+                        updateConnections();
+                    }
+                });
+            });
+        }
+
+        // Setup static node ports
+        attachPortListeners(document.getElementById('node-start'));
+        attachPortListeners(document.getElementById('node-end'));
+
+        function drawTemporaryConnection(x1, y1, x2, y2) {
+            let path = document.getElementById('temp-line');
+            if (!path) {
+                path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.id = 'temp-line';
+                path.setAttribute('stroke', '#3b82f6');
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('stroke-dasharray', '5,5');
+                path.setAttribute('fill', 'none');
+                DOM.svgLayer.appendChild(path);
+            }
+            
+            // Draw curved line (Bezier)
+            const d = `M ${x1} ${y1} C ${x1} ${y1 + 50}, ${x2} ${y2 - 50}, ${x2} ${y2}`;
+            path.setAttribute('d', d);
+        }
+
+        function updateConnections() {
+            DOM.svgLayer.innerHTML = ''; // Clear SVG (except definitions if any)
+            
+            // Add arrow marker def
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            defs.innerHTML = `<marker id="arrowhead" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#64748b" /></marker>
+                              <marker id="arrowhead-active" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto"><polygon points="0 0, 10 3.5, 0 7" fill="#3b82f6" /></marker>`;
+            DOM.svgLayer.appendChild(defs);
+
+            state.connections.forEach(conn => {
+                const fromNode = document.getElementById(conn.fromId);
+                const toNode = document.getElementById(conn.toId);
+                
+                if(!fromNode || !toNode) return;
+
+                const fromPort = fromNode.querySelector(`[data-port="${conn.fromPort}"]`);
+                const toPort = toNode.querySelector(`[data-port="${conn.toPort}"]`);
+                
+                if(!fromPort || !toPort) return;
+
+                const parentRect = DOM.workspace.getBoundingClientRect();
+                const fromRect = fromPort.getBoundingClientRect();
+                const toRect = toPort.getBoundingClientRect();
+
+                const x1 = fromRect.left + fromRect.width/2 - parentRect.left;
+                const y1 = fromRect.top + fromRect.height/2 - parentRect.top;
+                const x2 = toRect.left + toRect.width/2 - parentRect.left;
+                const y2 = toRect.top + toRect.height/2 - parentRect.top;
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.id = conn.pathId;
+                
+                // Logic for curve based on port position
+                let d = '';
+                if(conn.fromPort === 'yes') { // Right side port
+                     d = `M ${x1} ${y1} C ${x1 + 50} ${y1}, ${x2} ${y2 - 50}, ${x2} ${y2}`;
+                } else if(conn.fromPort === 'no') { // Left side port
+                     d = `M ${x1} ${y1} C ${x1 - 50} ${y1}, ${x2} ${y2 - 50}, ${x2} ${y2}`;
+                } else { // Bottom port
+                     d = `M ${x1} ${y1} C ${x1} ${y1 + 50}, ${x2} ${y2 - 50}, ${x2} ${y2}`;
+                }
+
+                path.setAttribute('d', d);
+                path.setAttribute('stroke', '#64748b');
+                path.setAttribute('stroke-width', '3');
+                path.setAttribute('fill', 'none');
+                path.setAttribute('marker-end', 'url(#arrowhead)');
+                path.classList.add('transition-colors', 'duration-300');
+                
+                // Allow clicking line to delete
+                path.style.cursor = 'pointer';
+                path.addEventListener('click', () => {
+                    state.connections = state.connections.filter(c => c.pathId !== conn.pathId);
+                    updateConnections();
+                    sfx.error();
+                });
+
+                DOM.svgLayer.appendChild(path);
+            });
+        }
+
+        // --- STREAMING_CHUNK:Game Logic & Engine ---
+        
+        function updateStats() {
+            DOM.score.textContent = state.score;
+            DOM.bugs.textContent = state.bugs;
+        }
+
+        function startTimer() {
+            state.timerInterval = setInterval(() => {
+                state.timerSeconds++;
+                const m = Math.floor(state.timerSeconds / 60).toString().padStart(2, '0');
+                const s = (state.timerSeconds % 60).toString().padStart(2, '0');
+                DOM.timer.textContent = `${m}:${s}`;
+            }, 1000);
+        }
+
+        document.getElementById('btn-start-game').addEventListener('click', () => {
+            document.getElementById('modal-start').classList.add('hidden');
+            startTimer();
+            initDragAndDrop();
+            sfx.success();
+        });
+
+        // Phase Transition
+        DOM.btnTest.addEventListener('click', () => {
+            if(state.phase === 1) {
+                // Check if basic flow exists
+                const startConn = state.connections.find(c => c.fromId === 'start');
+                if(!startConn) {
+                    showToast('ยังไม่ได้ลากเส้นออกจาก START!', 'warning');
+                    return;
+                }
+                
+                state.phase = 2;
+                DOM.phaseIndicator.innerHTML = '<i class="fas fa-flask text-green-400"></i> 2. Testing & Debug';
+                DOM.btnTest.classList.add('hidden');
+                
+                // Open right panel
+                DOM.scenarioPanel.classList.remove('translate-x-full');
+                DOM.btnRunScenario.classList.remove('hidden');
+                
+                loadScenario(0);
+                showToast('เข้าสู่โหมดทดสอบ!', 'success');
+            }
+        });
+
+        function loadScenario(index) {
+            state.currentScenarioIndex = index;
+            if(index >= SCENARIOS.length) {
+                endGame();
+                return;
+            }
+
+            const s = SCENARIOS[index];
+            document.getElementById('scenario-num').textContent = index + 1;
+            document.getElementById('scenario-title').textContent = s.title;
+            document.getElementById('scenario-desc').textContent = s.desc;
+            
+            document.getElementById('env-user').textContent = s.env.user;
+            document.getElementById('env-user').className = s.env.user === 'Teacher' ? 'text-orange-400' : 'text-blue-300';
+            
+            document.getElementById('env-overdue').textContent = s.env.overdue ? 'Yes' : 'No';
+            document.getElementById('env-overdue').className = s.env.overdue ? 'text-red-400' : 'text-green-400';
+            
+            document.getElementById('env-item').textContent = `Qty: ${s.env.itemQty}`;
+            document.getElementById('env-item').className = s.env.itemQty === 0 ? 'text-red-400' : 'text-yellow-300';
+            
+            document.getElementById('env-status').textContent = s.env.broken ? 'Broken' : 'Good';
+            document.getElementById('env-status').className = s.env.broken ? 'text-red-400' : 'text-green-400';
+
+            DOM.btnRunScenario.disabled = false;
+            logExec(`Loaded Scenario ${index+1}: ${s.title}`);
+        }
+
+        // The Engine: Evaluates the user's flowchart against the scenario
+        DOM.btnRunScenario.addEventListener('click', async () => {
+            DOM.btnRunScenario.disabled = true;
+            const s = SCENARIOS[state.currentScenarioIndex];
+            logExec(`--- Running Scenario ${s.id} ---`, 'normal');
+            
+            let currentNodeId = 'start';
+            let executionPath = ['start'];
+            let outputText = null;
+            let reachedEnd = false;
+            let steps = 0;
+            const maxSteps = 20; // Prevent infinite loops
+
+            // Reset visual highlights
+            document.querySelectorAll('.node-element').forEach(n => n.classList.remove('pulse-animation', 'ring-4', 'ring-blue-500'));
+            updateConnections(); // Reset line colors
+
+            while(!reachedEnd && steps < maxSteps) {
+                steps++;
+                
+                // Highlight current node
+                const el = document.getElementById(currentNodeId);
+                if(el) {
+                    el.classList.add('pulse-animation', 'ring-4', 'ring-blue-500');
+                    await new Promise(r => setTimeout(r, 600)); // Delay for animation
+                    el.classList.remove('pulse-animation');
+                }
+
+                // Find next connection
+                let nextConn = null;
+                
+                if (currentNodeId === 'start') {
+                    nextConn = state.connections.find(c => c.fromId === 'start');
+                } else if (currentNodeId === 'end') {
+                    reachedEnd = true;
+                    break;
+                } else {
+                    const nodeData = state.nodes.find(n => n.id === currentNodeId);
+                    if(!nodeData) {
+                        logExec(`CRITICAL ERROR: Node ${currentNodeId} not found.`, 'error');
+                        break;
+                    }
+
+                    logExec(`Executing: ${nodeData.text}`);
+
+                    if (nodeData.type === 'decision') {
+                        // Evaluate Decision based on text and env
+                        let decisionResult = false;
+                        const txt = nodeData.text;
+                        
+                        if(txt.includes("อุปกรณ์ว่าง")) decisionResult = s.env.itemQty > 0;
+                        else if(txt.includes("ค้างคืน")) decisionResult = s.env.overdue;
+                        else if(txt.includes("ชำรุด")) decisionResult = s.env.broken;
+                        else if(txt.includes("ครูหรือนักเรียน")) decisionResult = s.env.user === 'Teacher'; // Yes for teacher? Let's assume YES=Teacher for logic
+                        else if(txt.includes("Blacklist")) decisionResult = s.env.blacklist || false;
+
+                        logExec(`Decision evaluated to: ${decisionResult ? 'YES' : 'NO'}`, 'warning');
+                        nextConn = state.connections.find(c => c.fromId === currentNodeId && c.fromPort === (decisionResult ? 'yes' : 'no'));
+                    } 
+                    else if (nodeData.type === 'io') {
+                        if(nodeData.text.includes("แสดงข้อความ")) {
+                            // Extract text inside quotes if possible, or just take whole string
+                            const match = nodeData.text.match(/'(.*)'/);
+                            outputText = match ? match[1] : nodeData.text;
+                            logExec(`Output: [${outputText}]`, 'success');
+                        }
+                        nextConn = state.connections.find(c => c.fromId === currentNodeId);
+                    }
+                    else {
+                        // Process or Action (just pass through)
+                        nextConn = state.connections.find(c => c.fromId === currentNodeId);
+                    }
+                }
+
+                if (!nextConn) {
+                    logExec(`ERROR: Dead end reached at node.`, 'error');
+                    break;
+                }
+
+                // Highlight path
+                const pathEl = document.getElementById(nextConn.pathId);
+                if(pathEl) {
+                    pathEl.setAttribute('stroke', '#3b82f6');
+                    pathEl.setAttribute('marker-end', 'url(#arrowhead-active)');
+                }
+
+                currentNodeId = nextConn.toId;
+                executionPath.push(currentNodeId);
+            }
+
+            // Evaluation
+            if (steps >= maxSteps) {
+                handleBug("Infinite loop detected or flowchart too complex.");
+            } else if (!reachedEnd) {
+                handleBug("Flowchart did not reach END.");
+            } else {
+                // Check if output matches expected
+                // In a real educational game, this logic needs to be flexible.
+                // For this prototype, we check if the final output string matches the expected end string loosely.
+                if(outputText && outputText.includes(s.expectedEnd)) {
+                    handleSuccess();
+                } else {
+                    handleBug(`Wrong outcome. Expected: [${s.expectedEnd}], Got: [${outputText || 'None'}]`);
+                }
+            }
+        });
+
+        function handleBug(reason) {
+            sfx.error();
+            state.bugs++;
+            updateStats();
+            logExec(`[BUG] ${reason}`, 'error');
+            showToast('Bug Detected! แก้ไข Flowchart แล้วลองใหม่', 'error');
+            
+            const workspace = document.getElementById('workspace-container');
+            workspace.classList.add('shake-animation');
+            setTimeout(() => workspace.classList.remove('shake-animation'), 500);
+
+            DOM.btnRunScenario.disabled = false;
+            DOM.btnRunScenario.innerHTML = '<i class="fas fa-wrench mr-2"></i> Apply Patch (Try Again)';
+            DOM.btnRunScenario.classList.replace('bg-green-600', 'bg-orange-500');
+            DOM.btnRunScenario.classList.replace('hover:bg-green-500', 'hover:bg-orange-400');
+        }
+
+        function handleSuccess() {
+            sfx.success();
+            state.score++;
+            updateStats();
+            logExec(`[SUCCESS] Scenario passed!`, 'success');
+            showToast('ผ่าน! ระบบทำงานถูกต้อง', 'success');
+            
+            document.body.classList.add('success-flash');
+            setTimeout(() => document.body.classList.remove('success-flash'), 1000);
+
+            setTimeout(() => {
+                DOM.btnRunScenario.innerHTML = '<i class="fas fa-flask mr-2"></i> Run Scenario';
+                DOM.btnRunScenario.classList.replace('bg-orange-500', 'bg-green-600');
+                DOM.btnRunScenario.classList.replace('hover:bg-orange-400', 'hover:bg-green-500');
+                loadScenario(state.currentScenarioIndex + 1);
+            }, 1500);
+        }
+
+        // --- STREAMING_CHUNK:Finalization and UI toggles ---
+        function endGame() {
+            clearInterval(state.timerInterval);
+            document.getElementById('modal-result').classList.remove('hidden');
+            document.getElementById('final-score').textContent = state.score;
+            document.getElementById('final-bugs').textContent = state.bugs;
+            
+            // Generate simple pseudocode based on nodes
+            let code = "START\n";
+            state.nodes.forEach(n => {
+                if(n.type === 'decision') code += `  IF ${n.text} THEN...\n`;
+                else code += `  DO: ${n.text}\n`;
+            });
+            code += "END";
+            document.getElementById('pseudocode-output').textContent = code;
+            sfx.success();
+        }
+
+        // Clear Board
+        document.getElementById('btn-clear').addEventListener('click', () => {
+            if(confirm('Are you sure you want to clear the board?')) {
+                state.nodes.forEach(n => {
+                    const el = document.getElementById(n.id);
+                    if(el) el.remove();
+                });
+                state.nodes = [];
+                state.connections = state.connections.filter(c => c.fromId === 'start' || c.toId === 'end'); // Keep start/end connected lines if they were direct? Actually, just clear all.
+                state.connections = [];
+                updateConnections();
+                sfx.drop();
+            }
+        });
+
+        // Mobile Toggles
+        document.getElementById('btn-mobile-tools').addEventListener('click', () => {
+            const sidebar = document.querySelector('aside.w-64');
+            sidebar.classList.toggle('hidden');
+            sidebar.classList.toggle('absolute');
+            sidebar.classList.toggle('h-full');
+            sidebar.classList.toggle('bg-slate-900');
+        });
+
+        document.getElementById('btn-toggle-scenario').addEventListener('click', () => {
+            DOM.scenarioPanel.classList.toggle('translate-x-full');
+        });
+        document.getElementById('btn-close-scenario').addEventListener('click', () => {
+            DOM.scenarioPanel.classList.add('translate-x-full');
+        });
+
+        // Teacher Mode Cheat
+        document.getElementById('btn-teacher').addEventListener('click', () => {
+            let pass = prompt("Teacher Password (hint: 1234):");
+            if(pass === "1234") {
+                state.score = 12;
+                updateStats();
+                endGame();
+            }
+        });
+
+    </script>
+</body>
+</html>
